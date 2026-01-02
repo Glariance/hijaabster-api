@@ -84,18 +84,23 @@ class ContactController extends Controller
             'company' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'service' => ['nullable', 'string', 'max:255'],
+            'topic' => ['nullable', 'string', 'max:255'],
             'message' => ['required', 'string', 'max:2000'],
             'subject' => ['nullable', 'string', 'max:255'],
         ]);
 
+        // Use topic if provided, otherwise use service, otherwise default
+        $topicOrService = $validated['topic'] ?? $validated['service'] ?? '';
+        $subject = $validated['subject'] ?? ($topicOrService ?: 'Website Inquiry');
+
         $inquiry = ContactInquiry::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'company' => $validated['company'] ?? '',
-            'phone' => $validated['phone'] ?? '',
-            'service' => $validated['service'] ?? '',
+            'company' => $validated['company'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'service' => $topicOrService ?: null, // Store topic/service in service field
             'message' => $validated['message'],
-            'subject' => $validated['subject'] ?? 'Website Inquiry',
+            'subject' => $subject,
             'is_read' => 0,
         ]);
 

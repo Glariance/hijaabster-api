@@ -14,13 +14,31 @@
         </tr>
         <tr>
             <th>Email</th>
-            <td>{{ $contactInquiry->email }}</td>
+            <td><a href="mailto:{{ $contactInquiry->email }}">{{ $contactInquiry->email }}</a></td>
         </tr>
+        @if($contactInquiry->phone)
+        <tr>
+            <th>Phone</th>
+            <td><a href="tel:{{ $contactInquiry->phone }}">{{ $contactInquiry->phone }}</a></td>
+        </tr>
+        @endif
+        @if($contactInquiry->company)
+        <tr>
+            <th>Company</th>
+            <td>{{ $contactInquiry->company }}</td>
+        </tr>
+        @endif
+        @if($contactInquiry->service)
+        <tr>
+            <th>Topic/Service</th>
+            <td>{{ $contactInquiry->service }}</td>
+        </tr>
+        @endif
         <tr>
             <th>Subject</th>
             <td>{{ $contactInquiry->subject }}</td>
         </tr>
-        {{-- <tr>
+        <tr>
             <th>Status</th>
             <td>
                 @if ($contactInquiry->is_read)
@@ -29,14 +47,14 @@
                 <span class="badge bg-warning">Unread</span>
                 @endif
             </td>
-        </tr> --}}
+        </tr>
         <tr>
-            <th>Received-At</th>
+            <th>Received At</th>
             <td>{{ $contactInquiry->created_at->format('d M Y, h:i A') }}</td>
         </tr>
         <tr>
             <th>Message</th>
-            <td>{{ $contactInquiry->message }}</td>
+            <td style="white-space: pre-wrap;">{{ $contactInquiry->message }}</td>
         </tr>
     </table>
 

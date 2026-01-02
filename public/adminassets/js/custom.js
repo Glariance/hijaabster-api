@@ -8,6 +8,14 @@ $(function () {
             let form = $(this);
             let formData = new FormData(this);
             let actionUrl = form.attr("action");
+            
+            // Debug: Log all form fields
+            console.log('Form submission - Form ID:', form.attr('id'));
+            console.log('Form submission - Action URL:', actionUrl);
+            for (let pair of formData.entries()) {
+                console.log('Form field:', pair[0], '=', pair[1]);
+            }
+            
             let files = (typeof getSelectedFile === 'function') ? getSelectedFile() : null; // Get file(s) from Dropzone
             if (files) {
                 if (Array.isArray(files)) {
@@ -24,6 +32,7 @@ $(function () {
                 data: formData,
                 processData: false,
                 contentType: false,
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 beforeSend: function () {
                     progressLoad();
                     // form.find("button[type=submit]").prop("disabled", true);

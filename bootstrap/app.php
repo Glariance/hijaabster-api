@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
             'api/*',
+            'admin/cms/section/image/upload', // Image upload endpoint (base64 fallback)
         ]);
 
     })

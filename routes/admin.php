@@ -67,6 +67,7 @@ Route::middleware(['auth', 'role:'.config('constants.ADMIN')])->group(function (
             Route::delete('/delete/{id}', [CMSController::class, 'sectionDelete'])->name('section.delete');
 
             // Section Fields Routes
+            Route::post('/image/upload', [CMSController::class, 'uploadImage'])->name('image.upload');
             Route::prefix('{sectionId}/fields')->group(function () {
                 Route::get('/', [CMSController::class, 'sectionFieldIndex'])->name('section.fields');
                 Route::post('/store', [CMSController::class, 'sectionFieldStore'])->name('section.field.store');

@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class LoginController extends Controller
@@ -64,7 +65,7 @@ class LoginController extends Controller
         }
         // Update Password
         $admin = User::where('email', $request->email)->first();
-        $admin->password = $request->password;
+        $admin->password = Hash::make($request->password);
         $admin->save();
 
         // Delete Reset Token
