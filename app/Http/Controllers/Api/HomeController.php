@@ -122,8 +122,16 @@ class HomeController extends Controller
             return $path;
         }
 
+        // Check if file exists in public/storage (created by storage:link)
+        $publicPath = public_path('storage/' . ltrim($path, '/'));
+        if (file_exists($publicPath) && is_file($publicPath)) {
+            // Use direct URL to /storage/ path (Laravel's storage symlink)
+            return url('storage/' . ltrim($path, '/'));
+        }
+
+        // Fallback: check in storage/app/public
         if (Storage::disk('public')->exists($path)) {
-            return route('media.asset', ['path' => ltrim($path, '/')]);
+            return url('storage/' . ltrim($path, '/'));
         }
 
         return $path;

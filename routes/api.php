@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/contact/page', [ContactController::class, 'show']);
 Route::get('/privacy', [PrivacyController::class, 'show']);
 Route::post('/contact', [ContactController::class, 'store']);
-// Route::get('/home', [HomeController::class, 'show']);
+Route::get('/home', [HomeController::class, 'show']);
 // Route::get('/about', [AboutController::class, 'show']);
 // Route::post('/newsletter', [NewsLetterController::class, 'subscribe']);
 

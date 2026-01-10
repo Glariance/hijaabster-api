@@ -1,5 +1,5 @@
 @extends('admin.layouts.app')
-@section('title', env('APP_NAME') . ' | Category Management')
+@section('title', env('APP_NAME') . ' | Coupon Management')
 @section('content')
 
     <div class="page-wrapper">
@@ -12,32 +12,29 @@
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a>
                             </li>
-                            <li class="breadcrumb-item active" aria-current="page">Category Management</li>
+                            <li class="breadcrumb-item active" aria-current="page">Coupon Management</li>
                         </ol>
                     </nav>
                 </div>
                 <div class="ms-auto">
-                    {{-- <button type="button"
-                        onclick="showAjaxModal('Send Mail to Subscribers', 'Send', `{{ route('admin.newsletter-management.send-mail-view') }}`)"
-                        class="btn btn-light px-5">Send Mail</button> --}}
                     <button type="button"
-                        onclick="showAjaxModal('Create New Category', 'Save', `{{ route('admin.inventory.category.create') }}`)"
+                        onclick="showAjaxModal('Create New Coupon', 'Save', `{{ route('admin.coupon.create') }}`)"
                         class="btn btn-light px-5">Create</button>
                 </div>
             </div>
-            <!--end breadcrumb-->
-
-            <h6 class="mb-0 text-uppercase">Category Management</h6>
+            <h6 class="mb-0 text-uppercase">Coupon Management</h6>
             <hr />
             <div class="card">
                 <div class="card-body">
-                    <table id="category-Table" class="table table-striped table-bordered">
+                    <table id="coupons-table" class="table table-striped table-bordered">
                         <thead>
                             <tr>
                                 <th>S.no</th>
-                                <th>Image</th>
-                                <th>Parent</th>
+                                <th>Code</th>
                                 <th>Name</th>
+                                <th>Discount</th>
+                                <th>Valid From</th>
+                                <th>Valid Until</th>
                                 <th>Status</th>
                                 <th>Created At</th>
                                 <th>Action</th>
@@ -46,9 +43,11 @@
                         <tfoot>
                             <tr>
                                 <th>S.no</th>
-                                <th>Image</th>
-                                <th>Parent</th>
+                                <th>Code</th>
                                 <th>Name</th>
+                                <th>Discount</th>
+                                <th>Valid From</th>
+                                <th>Valid Until</th>
                                 <th>Status</th>
                                 <th>Created At</th>
                                 <th>Action</th>
@@ -62,22 +61,27 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
+                ajaxPost('#coupon-form', '#coupon-btn', function(response) {
+                    successMessage(response.success);
+                    $('#custom-lg-modal').modal('hide');
+                    loadDatatable();
+                });
                 loadDatatable();
             });
 
             function loadDatatable() {
 
-                if ($.fn.DataTable.isDataTable('#category-Table')) {
-                    $('#category-Table').DataTable().clear().destroy();
+                if ($.fn.DataTable.isDataTable('#coupons-table')) {
+                    $('#coupons-table').DataTable().clear().destroy();
                 }
 
-                let table = $('#category-Table').DataTable({
+                let table = $('#coupons-table').DataTable({
                     processing: true,
                     serverSide: true,
-                    ajax: "{{ route('admin.inventory.category.index') }}",
-                    lengthChange: true, // 👈 Enables "per page" dropdown
-                    lengthMenu: [10, 25, 50, 100, 250, 500], // 👈 Custom per page options
-                    pageLength: 25, // 👈 Default per page
+                    ajax: "{{ route('admin.coupon.index') }}",
+                    lengthChange: true,
+                    lengthMenu: [10, 25, 50, 100, 250, 500],
+                    pageLength: 25,
                     columns: [{
                             data: 'DT_RowIndex',
                             name: 'DT_RowIndex',
@@ -85,20 +89,30 @@
                             searchable: false
                         },
                         {
-                            data: 'image',
-                            name: 'image',
-                            orderable: false,
-                            searchable: false
-                        },
-                        {
-                            data: 'parent_id',
-                            name: 'parent_id',
-                            orderable: false,
-                            searchable: false
+                            data: 'code',
+                            name: 'code'
                         },
                         {
                             data: 'name',
                             name: 'name'
+                        },
+                        {
+                            data: 'discount_type',
+                            name: 'discount_type',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            data: 'valid_from',
+                            name: 'valid_from',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            data: 'valid_until',
+                            name: 'valid_until',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'status',
@@ -134,3 +148,4 @@
         </script>
     @endpush
 @endsection
+

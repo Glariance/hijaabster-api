@@ -238,10 +238,10 @@ class CMSController extends Controller
                                 'field_id' => $fieldId,
                                 'keeping_existing' => $field->field_value
                             ]);
-                        }
+                    }
                     } else {
                         // For non-image fields, update the value
-                        $field->update(['field_value' => $data]);
+                    $field->update(['field_value' => $data]);
                     }
                 }
             }
@@ -369,7 +369,7 @@ class CMSController extends Controller
                                 }
                             } elseif ($request->hasFile("fields.$fieldId")) {
                                 // Regular file upload (if temp directory works)
-                                $file = $request->file("fields.$fieldId");
+                            $file = $request->file("fields.$fieldId");
                                 
                                 if ($file && $file->isValid()) {
                                     $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -381,7 +381,7 @@ class CMSController extends Controller
                                     }
                                     
                                     $filePath = $file->storeAs($directory, $filename, 'public');
-                                    $field->field_value = $filePath;
+                            $field->field_value = $filePath;
                                     $field->save();
                                     \Log::info('Image uploaded and saved', ['field_id' => $fieldId, 'path' => $filePath]);
                                 }

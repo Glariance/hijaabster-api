@@ -11,6 +11,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
 
@@ -22,7 +23,7 @@ class ProductController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            $data = Product::with(['brand', 'category'])
+            $data = Product::with(['brand', 'category', 'mediaFeatured'])
                 ->when(request('category_id'), function ($query, $categoryId) {
                     $query->where('category_id', $categoryId);
                 })
@@ -30,6 +31,14 @@ class ProductController extends Controller
                 ->orderBy('id', 'desc');
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->addColumn('image', function ($row) {
+                    if ($row->mediaFeatured && $row->mediaFeatured->path) {
+                        $imagePath = asset($row->mediaFeatured->path);
+                        return '<img src="' . $imagePath . '" alt="' . $row->name . '" width="120" height="120" style="object-fit: cover; border-radius: 4px;">';
+                    } else {
+                        return defaultBadge('No Image', 100);
+                    }
+                })
                 ->addColumn('action', function ($row) {
                     $showUrl = route('admin.inventory.product.show', $row->id);
                     $editUrl = route('admin.inventory.product.edit', $row->id);
@@ -40,10 +49,6 @@ class ProductController extends Controller
                     $deleteBtn = '<a href="javascript:;" onclick="deleteTag(' . $row->id . ', `' . route('admin.inventory.product.destroy', $row->id) . '`)" class="btn btn-light text-danger"><i class="bx bx-trash"></i></a>';
                     // $deleteBtn
                     return $showBtn . ' ' . $editBtn . ' ' . $deleteBtn;
-                })
-                ->addColumn('image', function ($row) {
-                    $imagePath = asset("storage/" . $row->mediaFeatured?->path);
-                    return "<img src='" . $imagePath . "' alt='' width='150'/>";
                 })
                 ->editColumn('status', function ($row) {
                     return defaultBadge(config('constants.product.status.' . $row->status));
@@ -60,7 +65,7 @@ class ProductController extends Controller
                 ->editColumn('category_id', function ($row) {
                     return $row->category->name ?? "N/A";
                 })
-                ->rawColumns(['action', 'status', 'featured', 'image']) // Allow HTML in these columns
+                ->rawColumns(['image', 'action', 'status', 'featured']) // Allow HTML in these columns
                 ->make(true);
         }
         $categories = Category::where('status', 1)
@@ -85,7 +90,9 @@ class ProductController extends Controller
             }])
             ->orderBy('name')
             ->get();
-        return view('admin.pages.inventory.product.create', compact('categories'));
+        $brands = Brand::where('status', 1)->orderBy('name')->get();
+        $coupons = \App\Models\Coupon::where('status', 1)->orderBy('name')->get();
+        return view('admin.pages.inventory.product.create', compact('categories', 'brands', 'coupons'));
     }
 
     /**
@@ -97,41 +104,95 @@ class ProductController extends Controller
             'created_by' => Auth::id(),
         ]);
 
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:products,slug',
             'description' => 'nullable|string',
-            'amazon_link' => 'nullable|url|max:2048',
-            'image' => 'required|file|mimes:jpeg,png,jpg,gif,svg,webp|max:20480',
+            'files' => 'required|array',
+            'files.*' => 'file|mimes:jpeg,png,jpg,gif,svg,webp|max:20480',
             'category_id' => 'required|exists:categories,id',
+            'brand_id' => 'nullable|exists:brands,id',
+            'base_price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'has_discount' => 'nullable|in:0,1',
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'coupon_id' => 'nullable|exists:coupons,id',
+            'featured' => 'nullable|in:0,1',
+            'new' => 'nullable|in:0,1',
+            'top' => 'nullable|in:0,1',
+            'status' => 'required|in:0,1',
             'created_by' => 'required|exists:users,id',
         ], [
-            'image.required' => 'Please upload at least one product image.',
+            'files.required' => 'Please upload at least one product image.',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+                'message' => 'Validation failed. Please check the form.'
+            ], 422);
+        }
 
         DB::beginTransaction();
 
         try {
+            $validated = $validator->validated();
+            $status = $request->boolean('status');
             $product = Product::create([
                 'name' => $validated['name'],
-                'slug' => $this->generateUniqueSlug($validated['name']),
+                'slug' => $validated['slug'],
                 'description' => $validated['description'] ?? null,
-                'amazon_link' => $validated['amazon_link'] ?? null,
-                'base_price' => 0,
-                'stock' => 0,
+                'base_price' => $validated['base_price'] ?? 0,
+                'stock' => $validated['stock'] ?? 0,
                 'has_variations' => 0,
                 'category_id' => $validated['category_id'] ?? $this->resolveDefaultCategoryId(),
-                'brand_id' => $this->resolveDefaultBrandId(),
-                'has_discount' => 0,
-                'discount_type' => null,
-                'discount_value' => 0,
+                'brand_id' => !empty($validated['brand_id']) ? $validated['brand_id'] : null,
+                'has_discount' => $request->has('has_discount') ? 1 : 0,
+                'discount_type' => $validated['discount_type'] ?? null,
+                'discount_value' => $validated['discount_value'] ?? 0,
+                'coupon_id' => !empty($validated['coupon_id']) ? $validated['coupon_id'] : null,
                 'created_by' => $validated['created_by'],
-                'featured' => 0,
-                'new' => 0,
-                'top' => 0,
-                'status' => 1,
+                'featured' => $request->has('featured') ? 1 : 0,
+                'new' => $request->has('new') ? 1 : 0,
+                'top' => $request->has('top') ? 1 : 0,
+                'status' => $status ? 1 : 0,
             ]);
 
-            $this->storeOrReplaceProductImage($product, $request->file('image'));
+            // Handle featured media selection
+            $featuredMediaId = $request->input('featured_media_id');
+            $newFeaturedIndex = $request->input('new_featured_index', 0);
+            
+            // First, unset all existing featured images
+            if ($featuredMediaId) {
+                $product->media()->update(['is_featured' => 0]);
+            }
+            
+            if ($request->hasFile('files')) {
+                $files = $request->file('files');
+                $newMediaIds = [];
+                foreach ($files as $index => $file) {
+                    $storedPath = $file->store('products', 'public');
+                    $mime = $file->getMimeType();
+                    $mediaType = str()->startsWith($mime, 'image') ? 'image' : (str()->startsWith($mime, 'video') ? 'video' : 'unknown');
+                    $newMedia = $product->media()->create([
+                        'path' => "/storage/{$storedPath}",
+                        'media_type' => $mediaType,
+                        'is_featured' => 0, // Will be set below if needed
+                    ]);
+                    $newMediaIds[] = $newMedia->id;
+                }
+                
+                // If no existing featured selected, make the selected new one featured
+                if (!$featuredMediaId && isset($newMediaIds[$newFeaturedIndex])) {
+                    $product->media()->where('id', $newMediaIds[$newFeaturedIndex])->update(['is_featured' => 1]);
+                }
+            }
+            
+            // Set the selected existing media as featured
+            if ($featuredMediaId) {
+                $product->media()->where('id', $featuredMediaId)->update(['is_featured' => 1]);
+            }
 
             DB::commit();
 
@@ -180,7 +241,9 @@ class ProductController extends Controller
             }])
             ->orderBy('name')
             ->get();
-        return view('admin.pages.inventory.product.edit', compact('product', 'categories'));
+        $brands = Brand::where('status', 1)->orderBy('name')->get();
+        $coupons = \App\Models\Coupon::where('status', 1)->orderBy('name')->get();
+        return view('admin.pages.inventory.product.create', compact('product', 'categories', 'brands', 'coupons'));
     }
 
     /**
@@ -190,30 +253,98 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
 
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:products,slug,' . $product->id,
             'description' => 'nullable|string',
-            'amazon_link' => 'nullable|url|max:2048',
-            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:20480',
+            'files' => 'nullable|array',
+            'files.*' => 'file|mimes:jpeg,png,jpg,gif,svg,webp|max:20480',
             'category_id' => 'required|exists:categories,id',
-            'status' => 'nullable|in:0,1',
+            'brand_id' => 'nullable|exists:brands,id',
+            'base_price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'has_discount' => 'nullable|in:0,1',
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'featured' => 'nullable|in:0,1',
+            'new' => 'nullable|in:0,1',
+            'top' => 'nullable|in:0,1',
+            'status' => 'required|in:0,1',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+                'message' => 'Validation failed. Please check the form.'
+            ], 422);
+        }
 
         DB::beginTransaction();
 
         try {
+            $validated = $validator->validated();
             $status = $request->boolean('status');
+            
+            // Prepare brand_id - convert empty string to null
+            $brandId = $request->input('brand_id');
+            $brandId = ($brandId === '' || $brandId === null || $brandId === '0') ? null : (int)$brandId;
+            
             $product->update([
                 'name' => $validated['name'],
-                'slug' => $this->generateUniqueSlug($validated['name'], $product->id),
+                'slug' => $validated['slug'],
                 'description' => $validated['description'] ?? null,
-                'amazon_link' => $validated['amazon_link'] ?? null,
+                'base_price' => $validated['base_price'] ?? 0,
+                'stock' => $validated['stock'] ?? 0,
                 'category_id' => $validated['category_id'],
+                'brand_id' => $brandId,
+                'has_discount' => $request->has('has_discount') ? 1 : 0,
+                'discount_type' => $validated['discount_type'] ?? null,
+                'discount_value' => $validated['discount_value'] ?? 0,
+                'coupon_id' => !empty($validated['coupon_id']) ? $validated['coupon_id'] : null,
+                'featured' => $request->has('featured') ? 1 : 0,
+                'new' => $request->has('new') ? 1 : 0,
+                'top' => $request->has('top') ? 1 : 0,
                 'status' => $status ? 1 : 0,
             ]);
 
-            if ($request->hasFile('image')) {
-                $this->storeOrReplaceProductImage($product, $request->file('image'));
+            // Handle featured media selection
+            $featuredMediaId = $request->input('featured_media_id');
+            $newFeaturedIndex = $request->input('new_featured_index', 0);
+            
+            // First, unset all existing featured images
+            $product->media()->update(['is_featured' => 0]);
+            
+            // Add new files if any
+            if ($request->hasFile('files')) {
+                $files = $request->file('files');
+                $newMediaIds = [];
+                foreach ($files as $index => $file) {
+                    $storedPath = $file->store('products', 'public');
+                    $mime = $file->getMimeType();
+                    $mediaType = str()->startsWith($mime, 'image') ? 'image' : (str()->startsWith($mime, 'video') ? 'video' : 'unknown');
+                    $newMedia = $product->media()->create([
+                        'path' => "/storage/{$storedPath}",
+                        'media_type' => $mediaType,
+                        'is_featured' => 0, // Will be set below if needed
+                    ]);
+                    $newMediaIds[] = $newMedia->id;
+                }
+                
+                // If no existing featured selected, make the selected new one featured
+                if (!$featuredMediaId && isset($newMediaIds[$newFeaturedIndex])) {
+                    $product->media()->where('id', $newMediaIds[$newFeaturedIndex])->update(['is_featured' => 1]);
+                }
+            }
+            
+            // Set the selected existing media as featured
+            if ($featuredMediaId) {
+                $product->media()->where('id', $featuredMediaId)->update(['is_featured' => 1]);
+            } else if ($request->hasFile('files') && !$featuredMediaId) {
+                // If no existing featured selected and new files uploaded, make the selected new one featured
+                $newMedia = $product->media()->whereNull('deleted_at')->orderBy('id', 'desc')->skip($product->media()->count() - count($files))->take(count($files))->get();
+                if (isset($newMedia[$newFeaturedIndex])) {
+                    $newMedia[$newFeaturedIndex]->update(['is_featured' => 1]);
+                }
             }
 
             DB::commit();
@@ -237,15 +368,50 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
+        // Check if this is a media deletion request by checking if ID exists in media table
+        $media = \App\Models\Media::find($id);
+        if ($media) {
+            // Check if it belongs to a product
+            $product = Product::find($media->mediaable_id);
+            if ($product && $media->mediaable_type === Product::class) {
+                // Delete individual media permanently
+                DB::beginTransaction();
+                try {
+                    if ($media->path) {
+                        $path = ltrim(str_replace('storage/', '', $media->path), '/');
+                        if ($path) {
+                            Storage::disk('public')->delete($path);
+                        }
+                    }
+                    // Permanently delete from database (not soft delete)
+                    $media->forceDelete();
+                    
+                    DB::commit();
+                    return response()->json(['success' => 'Image deleted successfully.']);
+                } catch (\Throwable $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Failed to delete image.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            }
+        }
+
+        // Delete entire product
         $product = Product::with('media')->findOrFail($id);
 
         DB::beginTransaction();
         try {
             $product->media()->each(function ($media) {
                 if ($media->path) {
-                    Storage::disk('public')->delete($media->path);
+                    $path = ltrim(str_replace('storage/', '', $media->path), '/');
+                    if ($path) {
+                        Storage::disk('public')->delete($path);
+                    }
                 }
-                $media->delete();
+                // Permanently delete from database (not soft delete)
+                $media->forceDelete();
             });
 
             $product->delete();

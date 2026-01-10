@@ -16,23 +16,33 @@ class BrandController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            $data = Brand::orderBy('status', 'Desc')->orderBy('id', 'Desc');
+            $data = Brand::with('media')->orderBy('status', 'Desc')->orderBy('id', 'Desc');
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->addColumn('image', function ($row) {
+                    if ($row->media && $row->media->path) {
+                        $imagePath = asset($row->media->path);
+                        return '<img src="' . $imagePath . '" alt="' . $row->name . '" width="120" height="120" style="object-fit: cover; border-radius: 4px;">';
+                    } else {
+                        return defaultBadge('No Image', 100);
+                    }
+                })
+                ->editColumn('status', function ($row) {
+                    return defaultBadge(config('constants.status.' . $row->status), 25);
+                })
                 ->addColumn('action', function ($row) {
                     $showUrl = route('admin.inventory.brand.show', $row->id);
                     $editUrl = route('admin.inventory.brand.edit', $row->id);
 
                     $showBtn = '<a href="javascript:;" onclick="showAjaxModal(\'View Brand Details\', \'view\', \'' . $showUrl . '\')" class="btn btn-light"><i class="lni lni-eye"></i></a>';
                     $editBtn = '<a href="javascript:;" onclick="showAjaxModal(\'Edit Brand Details\', \'Update\', \'' . $editUrl . '\')" class="btn btn-light"><i class="bx bx-edit-alt"></i></a>';
-                    $deleteBtn = '<a href="javascript:;" onclick="deleteTag(' . $row->id . ', `' . route('admin.inventory.brand.destroy', $row->id) . '`)" class="btn btn-light"><i class="bx bx-trash"></i></a>';
-                    // $deleteBtn
-                    return $showBtn . ' ' . $editBtn;
+                    $deleteBtn = '<a href="javascript:;" onclick="deleteTag(' . $row->id . ', `' . route('admin.inventory.brand.destroy', $row->id) . '`)" class="btn btn-light text-danger"><i class="bx bx-trash"></i></a>';
+                    return $showBtn . ' ' . $editBtn . ' ' . $deleteBtn;
                 })
                 ->editColumn('created_at', function ($row) {
                     return $row->created_at->format('d M Y');
                 })
-                ->rawColumns(['action'])
+                ->rawColumns(['image', 'status', 'action'])
                 ->make(true);
         }
         return view('admin.pages.inventory.brand.index');
@@ -155,28 +165,28 @@ class BrandController extends Controller
      */
     public function destroy(string $id)
     {
-        // try {
-        //     DB::beginTransaction();
+        try {
+            DB::beginTransaction();
 
-        //     // Delete associated media file if exists
-        //     $media = $brand->media()->first();
-        //     if ($media) {
-        //         $filePath = public_path($media->path);
-        //         if (file_exists($filePath)) {
-        //             unlink($filePath);
-        //         }
-        //         $media->delete();
-        //     }
+            $brand = Brand::with('media')->findOrFail($id);
 
-        //     // Delete the brand
-        //     $brand->delete();
+            // Delete associated media file if exists
+            if ($brand->media) {
+                $filePath = public_path($brand->media->path);
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+                $brand->media->delete();
+            }
 
-        //     DB::commit();
-        //     return redirect()->route('brands.index')->with('success', 'Brand deleted successfully.');
-        // } catch (\Exception $e) {
-        //     DB::rollBack();
-        //     return redirect()->back()->withErrors(['error' => 'Failed to delete brand: ' . $e->getMessage()]);
-        // }
+            // Delete the brand
+            $brand->delete();
 
+            DB::commit();
+            return response()->json(['success' => 'Brand deleted successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['errors' => 'Failed to delete brand: ' . $e->getMessage()], 500);
+        }
     }
 }

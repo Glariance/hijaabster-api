@@ -109,14 +109,14 @@
                                                                 object-fit: cover;
                                                             }
                                                         </style>
-                                                        @if ($field->field_value)
+                                                    @if ($field->field_value)
                                                             <div class="mt-2">
                                                                 <a href="javascript:void(0);" class="btn btn-sm btn-light view-image-btn"
-                                                                    onclick="openImageModal('{{ asset('storage/' . $field->field_value) }}')">
+                                                            onclick="openImageModal('{{ asset('storage/' . $field->field_value) }}')">
                                                                     <i class="bx bx-image"></i> View Current Image
-                                                                </a>
+                                                        </a>
                                                             </div>
-                                                        @endif
+                                                    @endif
                                                     </div>
                                                 @endif
                                                 @if ($field->field_type != 'textarea')
@@ -213,7 +213,7 @@
         });
         // Initialize CKEditor for all textarea fields with class myEditor
         function initializeCKEditors() {
-            $('.myEditor').each(function(index) {
+        $('.myEditor').each(function(index) {
                 var $textarea = $(this);
                 var elementId = $textarea.attr('id');
                 
@@ -226,10 +226,10 @@
                 // Only initialize if not already initialized
                 if (!CKEDITOR.instances[elementId]) {
                     console.log('Initializing CKEditor for:', elementId, 'name:', $textarea.attr('name'));
-                    CKEDITOR.replace(elementId, {
-                        width: '100%',
-                        // removePlugins: ['ExportPdf', 'ExportWord', 'TrackChanges', 'Comments']
-                    });
+            CKEDITOR.replace(elementId, {
+                width: '100%',
+                // removePlugins: ['ExportPdf', 'ExportWord', 'TrackChanges', 'Comments']
+            });
                 } else {
                     console.log('CKEditor already initialized for:', elementId);
                 }

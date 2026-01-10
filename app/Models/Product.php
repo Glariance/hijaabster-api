@@ -16,6 +16,7 @@ class Product extends Model
         'has_variations',
         'category_id',
         'brand_id',
+        'coupon_id',
         'has_discount',
         'discount_type',
         'discount_value',
@@ -34,6 +35,11 @@ class Product extends Model
     public function brand()
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function creator()

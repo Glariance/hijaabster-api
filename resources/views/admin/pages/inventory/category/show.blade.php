@@ -24,16 +24,20 @@
             <th>Desciption</th>
             <td>{!! $category->description !!}</td>
         </tr>
-        @isset($category->media)
+        @if($category->media && $category->media->count() > 0)
             <tr>
-                <th>Image</th>
+                <th>Images</th>
                 <td class="py-3">
                     <div class="d-flex flex-wrap gap-2">
-                        <img src="{{ $category->media->path }}" alt="{{ $category->slug }}" class="rounded border"
-                            style="max-width: 280px; max-height: 240px; object-fit: contain;">
+                        @foreach($category->media as $media)
+                            <div class="position-relative">
+                                <img src="{{ asset($media->path) }}" alt="{{ $category->slug }}" class="rounded border"
+                                    style="max-width: 280px; max-height: 240px; object-fit: contain;">
+                            </div>
+                        @endforeach
                     </div>
                 </td>
             </tr>
-        @endisset
+        @endif
     </table>
 </div>

@@ -52,6 +52,8 @@
                             class="bx bx-right-arrow-alt"></i>Create Product</a></li>
                 <li> <a href="{{ route('admin.inventory.product.index') }}"><i
                             class="bx bx-right-arrow-alt"></i>Products</a></li>
+                <li> <a href="{{ route('admin.coupon.index') }}"><i
+                            class="bx bx-right-arrow-alt"></i>Coupons</a></li>
             </ul>
         </li> 
 
@@ -64,7 +66,7 @@
             </a>
         </li>
 
-         <li>
+         {{-- <li>
             <a href="javascript:;" class="has-arrow">
                 <div class="parent-icon"><i class='fadeIn animated bx bx-image'></i>
                 </div>
@@ -74,7 +76,7 @@
                 <li> <a href="{{ route('admin.blogs.index') }}"><i class="bx bx-right-arrow-alt"></i>Blogs List</a></li>
                 <li> <a href="{{ route('admin.tags.index') }}"><i class="bx bx-right-arrow-alt"></i>Tags</a></li>
             </ul>
-        </li> 
+        </li>  --}}
 
 
         <li>

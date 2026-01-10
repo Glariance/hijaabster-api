@@ -48,14 +48,14 @@
                                                 object-fit: cover;
                                             }
                                         </style>
-                                        @if ($field->field_value)
+                                    @if ($field->field_value)
                                             <div class="mt-2">
                                                 <a href="javascript:void(0);" class="btn btn-sm btn-light view-image-btn"
-                                                    onclick="openImageModal(`{{ asset('storage/' . $field->field_value) }}`)">
+                                            onclick="openImageModal(`{{ asset('storage/' . $field->field_value) }}`)">
                                                     <i class="bx bx-image"></i> View Current Image
-                                                </a>
+                                        </a>
                                             </div>
-                                        @endif
+                                    @endif
                                     </div>
                                 @endif
                                 <button class="btn btn-light delete-btn" type="button"

@@ -32,7 +32,11 @@ $(function () {
                 data: formData,
                 processData: false,
                 contentType: false,
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                headers: { 
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 beforeSend: function () {
                     progressLoad();
                     // form.find("button[type=submit]").prop("disabled", true);
@@ -47,17 +51,42 @@ $(function () {
                     let messageError = "Something went wrong!";
                     if (xhr.responseJSON) {
                         console.log(xhr.responseJSON);
-                        let errors = xhr.responseJSON?.message ? xhr.responseJSON?.message : xhr.responseJSON.errors;
+                        let errors = xhr.responseJSON?.errors || xhr.responseJSON?.message;
 
-                        if (typeof errors === "object") {
-                            Object.values(errors).forEach(msg => errorMessage(msg));
-                        } else if (typeof errors === "string") {
-                            errorMessage(errors);
+                        if (errors) {
+                            if (typeof errors === "object" && !Array.isArray(errors)) {
+                                // Handle validation errors object {field: [messages]}
+                                Object.values(errors).forEach(msgArray => {
+                                    if (Array.isArray(msgArray)) {
+                                        msgArray.forEach(msg => errorMessage(msg));
+                                    } else {
+                                        errorMessage(msgArray);
+                                    }
+                                });
+                            } else if (Array.isArray(errors)) {
+                                errors.forEach(msg => errorMessage(msg));
+                            } else if (typeof errors === "string") {
+                                errorMessage(errors);
+                            } else {
+                                errorMessage(messageError);
+                            }
                         } else {
                             errorMessage(messageError);
                         }
                     } else if (xhr.responseText) {
-                        errorMessage(xhr.responseText);
+                        // Try to parse HTML response and extract error messages
+                        let parser = new DOMParser();
+                        let doc = parser.parseFromString(xhr.responseText, 'text/html');
+                        let errorElements = doc.querySelectorAll('.error, .alert-danger, ul li');
+                        if (errorElements.length > 0) {
+                            errorElements.forEach(el => {
+                                let text = el.textContent.trim();
+                                if (text) errorMessage(text);
+                            });
+                        } else {
+                            // If no structured errors found, show generic message
+                            errorMessage(messageError);
+                        }
                     } else {
                         errorMessage(messageError);
                     }

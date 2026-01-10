@@ -31,11 +31,15 @@
 
         <!-- Status -->
         <div class="col-md-12">
-            <label for="status" class="form-label">Status</label>
-            <select name="status" class="form-select" required>
-                <option value="1" @selected(isset($brand) && $brand->status === '1')>Active</option>
-                <option value="0" @selected(isset($brand) && $brand->status === '0')>Inactive</option>
-            </select>
+            <label class="form-label">Status</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="status" 
+                    @checked(isset($brand) ? $brand->status == 1 : true)>
+                <label class="form-check-label" for="status">
+                    <span id="status-label">{{ isset($brand) ? ($brand->status == 1 ? 'Active' : 'Inactive') : 'Active' }}</span>
+                </label>
+            </div>
+            <input type="hidden" name="status" id="status-hidden" value="{{ isset($brand) ? $brand->status : 1 }}">
         </div>
 
         <!-- Dropzone Image Upload -->
@@ -81,6 +85,13 @@
     }
 
     $(function() {
+        // Status switch handler
+        $('#status').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            $('#status-hidden').val(isChecked ? 1 : 0);
+            $('#status-label').text(isChecked ? 'Active' : 'Inactive');
+        });
+
         // CKEditor initialization
         $('.myEditor').each(function(index) {
             var elementId = $(this).attr('id') || 'editor-' + index;

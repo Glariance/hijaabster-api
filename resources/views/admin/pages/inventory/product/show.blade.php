@@ -42,13 +42,18 @@
             <th>Desciption</th>
             <td>{!! $product->description !!}</td>
         </tr>
-        @if ($product->media)
+        @if($product->media && $product->media->count() > 0)
             <tr>
-                <th>Image</th>
-                <td class="d-flex flex-wrap gap-2">
-                    @foreach ($product->media as $media)
-                        <img src="{{ asset('storage/' . $media->path) }}" alt="{{ $product->name }}" width="120" class="rounded border">
-                    @endforeach
+                <th>Images</th>
+                <td class="py-3">
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($product->media as $media)
+                            <div class="position-relative">
+                                <img src="{{ asset($media->path) }}" alt="{{ $product->name }}" class="rounded border"
+                                    style="max-width: 280px; max-height: 240px; object-fit: contain;">
+                            </div>
+                        @endforeach
+                    </div>
                 </td>
             </tr>
         @endif

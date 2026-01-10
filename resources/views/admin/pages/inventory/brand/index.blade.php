@@ -33,7 +33,9 @@
                         <thead>
                             <tr>
                                 <th>S.no</th>
+                                <th>Image</th>
                                 <th>Name</th>
+                                <th>Status</th>
                                 <th>Created At</th>
                                 <th>Action</th>
                             </tr>
@@ -41,7 +43,9 @@
                         <tfoot>
                             <tr>
                                 <th>S.no</th>
+                                <th>Image</th>
                                 <th>Name</th>
+                                <th>Status</th>
                                 <th>Created At</th>
                                 <th>Action</th>
                             </tr>
@@ -82,8 +86,20 @@
                             searchable: false
                         },
                         {
+                            data: 'image',
+                            name: 'image',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
                             data: 'name',
                             name: 'name'
+                        },
+                        {
+                            data: 'status',
+                            name: 'status',
+                            orderable: true,
+                            searchable: false
                         },
                         {
                             data: 'created_at',

@@ -17,9 +17,17 @@ class CategoryController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            $data = Category::orderBy('status', 'desc')->orderBy('id', 'desc');
+            $data = Category::with(['mediaFeatured', 'parent'])->orderBy('status', 'desc')->orderBy('id', 'desc');
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->addColumn('image', function ($row) {
+                    if ($row->mediaFeatured && $row->mediaFeatured->path) {
+                        $imagePath = asset($row->mediaFeatured->path);
+                        return '<img src="' . $imagePath . '" alt="' . $row->name . '" width="120" height="120" style="object-fit: cover; border-radius: 4px;">';
+                    } else {
+                        return defaultBadge('No Image', 100);
+                    }
+                })
                 ->addColumn('action', function ($row) {
                     $showUrl = route('admin.inventory.category.show', $row->id);
                     $editUrl = route('admin.inventory.category.edit', $row->id);
@@ -30,12 +38,19 @@ class CategoryController extends Controller
                     return $showBtn . ' ' . $editBtn . ' ' . $deleteBtn;
                 })
                 ->editColumn('parent_id', function ($row) {
-                    return $row->parent->name ?? "";
+                    if ($row->parent) {
+                        return defaultBadge($row->parent->name, 25);
+                    } else {
+                        return defaultBadge('No Parent', 100);
+                    }
+                })
+                ->editColumn('status', function ($row) {
+                    return defaultBadge(config('constants.status.' . $row->status), 100);
                 })
                 ->editColumn('created_at', function ($row) {
                     return $row->created_at->format('d M Y');
                 })
-                ->rawColumns(['action'])
+                ->rawColumns(['image', 'parent_id', 'status', 'action'])
                 ->make(true);
         }
         return view('admin.pages.inventory.category.index');
@@ -61,22 +76,40 @@ class CategoryController extends Controller
             'slug'         => 'required|string|max:255|unique:categories,slug',
             'description'  => 'nullable|string',
             'status'       => 'required|boolean',
-            'file'        => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
+            'files'        => 'nullable|array',
+            'files.*'      => 'file|mimes:jpg,jpeg,png,webp|max:10240',
         ]);
 
         try {
             DB::beginTransaction();
             $category = Category::create($validated);
-            if ($request->hasFile('file')) {
-                $file = $request->file('file');
-                $storedPath = $file->store('categories', 'public');
-                $mime = $file->getMimeType();
-                $mediaType = str()->startsWith($mime, 'image') ? 'image' : (str()->startsWith($mime, 'video') ? 'video' : 'unknown');
-                $category->media()->create([
-                    'path' => "/storage/{$storedPath}",
-                    'media_type' => $mediaType,
-                    'is_featured' => true,
-                ]);
+            
+            // Handle featured media selection
+            $featuredMediaId = $request->input('featured_media_id');
+            $newFeaturedIndex = $request->input('new_featured_index', 0);
+            
+            // First, unset all existing featured images
+            if ($featuredMediaId) {
+                $category->media()->update(['is_featured' => 0]);
+            }
+            
+            if ($request->hasFile('files')) {
+                $files = $request->file('files');
+                foreach ($files as $index => $file) {
+                    $storedPath = $file->store('categories', 'public');
+                    $mime = $file->getMimeType();
+                    $mediaType = str()->startsWith($mime, 'image') ? 'image' : (str()->startsWith($mime, 'video') ? 'video' : 'unknown');
+                    $category->media()->create([
+                        'path' => "/storage/{$storedPath}",
+                        'media_type' => $mediaType,
+                        'is_featured' => !$featuredMediaId && $index == $newFeaturedIndex, // Featured if no existing featured selected and this is the selected new one
+                    ]);
+                }
+            }
+            
+            // Set the selected existing media as featured
+            if ($featuredMediaId) {
+                $category->media()->where('id', $featuredMediaId)->update(['is_featured' => 1]);
             }
             DB::commit();
             return response()->json(['success' => "Category created successfully."]);
@@ -116,30 +149,45 @@ class CategoryController extends Controller
             'slug'        => 'required|string|max:255|unique:categories,slug,' . $category->id,
             'description' => 'nullable|string',
             'status'      => 'required|boolean',
-            'file'        => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
+            'files'       => 'nullable|array',
+            'files.*'     => 'file|mimes:jpg,jpeg,png,webp|max:10240',
         ]);
         try {
             DB::beginTransaction();
             $category->update($validated);
-            if ($request->hasFile('file')) {
-                $existingMedia = $category->media()->first();
-                if ($existingMedia) {
-                    $oldPath = public_path($existingMedia->path);
-                    if (file_exists($oldPath)) {
-                        unlink($oldPath);
-                    }
-                    $existingMedia->delete();
+            
+            // Handle featured media selection
+            $featuredMediaId = $request->input('featured_media_id');
+            $newFeaturedIndex = $request->input('new_featured_index', 0);
+            
+            // First, unset all existing featured images
+            $category->media()->update(['is_featured' => 0]);
+            
+            // Add new files if any
+            if ($request->hasFile('files')) {
+                $files = $request->file('files');
+                $newMediaIds = [];
+                foreach ($files as $index => $file) {
+                    $storedPath = $file->store('categories', 'public');
+                    $mime = $file->getMimeType();
+                    $mediaType = str()->startsWith($mime, 'image') ? 'image' : (str()->startsWith($mime, 'video') ? 'video' : 'unknown');
+                    $newMedia = $category->media()->create([
+                        'path' => "/storage/{$storedPath}",
+                        'media_type' => $mediaType,
+                        'is_featured' => 0, // Will be set below if needed
+                    ]);
+                    $newMediaIds[] = $newMedia->id;
                 }
-                $file = $request->file('file');
-                $storedPath = $file->store('categories', 'public');
-                $mime = $file->getMimeType();
-                $mediaType = str()->startsWith($mime, 'image') ? 'image' : (str()->startsWith($mime, 'video') ? 'video' : 'unknown');
-
-                $category->media()->create([
-                    'path' => "/storage/{$storedPath}",
-                    'media_type' => $mediaType,
-                    'is_featured' => true,
-                ]);
+                
+                // If no existing featured selected, make the selected new one featured
+                if (!$featuredMediaId && isset($newMediaIds[$newFeaturedIndex])) {
+                    $category->media()->where('id', $newMediaIds[$newFeaturedIndex])->update(['is_featured' => 1]);
+                }
+            }
+            
+            // Set the selected existing media as featured
+            if ($featuredMediaId) {
+                $category->media()->where('id', $featuredMediaId)->update(['is_featured' => 1]);
             }
             DB::commit();
             return response()->json(['success' => "Category updated successfully."]);
@@ -154,6 +202,46 @@ class CategoryController extends Controller
      */
     public function destroy(string $id)
     {
+        // Check if this is a media deletion request by checking if ID exists in media table
+        $media = \App\Models\Media::find($id);
+        if ($media) {
+            // Check if it belongs to a category
+            $category = Category::find($media->mediaable_id);
+            if ($category && $media->mediaable_type === Category::class) {
+                // Delete individual media permanently
+                DB::beginTransaction();
+                try {
+                    if ($media->path) {
+                        $path = ltrim(str_replace('storage/', '', $media->path), '/');
+                        if ($path) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                        }
+                    }
+                    // Permanently delete from database (not soft delete)
+                    $isFeatured = $media->is_featured;
+                    $media->forceDelete();
+                    
+                    // If deleted media was featured, make the first remaining media featured
+                    if ($isFeatured) {
+                        $firstMedia = $category->media()->first();
+                        if ($firstMedia) {
+                            $firstMedia->update(['is_featured' => 1]);
+                        }
+                    }
+                    
+                    DB::commit();
+                    return response()->json(['success' => 'Image deleted successfully.']);
+                } catch (\Throwable $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Failed to delete image.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            }
+        }
+
+        // Delete entire category
         $category = Category::with('media')->findOrFail($id);
 
         DB::beginTransaction();
@@ -165,7 +253,8 @@ class CategoryController extends Controller
                         \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
                     }
                 }
-                $media->delete();
+                // Permanently delete from database (not soft delete)
+                $media->forceDelete();
             });
 
             $category->delete();
