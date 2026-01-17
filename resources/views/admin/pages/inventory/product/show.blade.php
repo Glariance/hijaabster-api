@@ -16,6 +16,10 @@
             <th>Category</th>
             <td>{{ $product->category && $product->category->parent ? $product->category->parent->name . ' > ' . $product->category->name : ($product->category->name ?? '-') }}</td>
         </tr>
+        <tr>
+            <th>Coupon</th>
+            <td>{{ $product->coupon->name ?? 'N/A' }}</td>
+        </tr>
         @if ($product->amazon_link)
             <tr>
                 <th>Amazon Link</th>

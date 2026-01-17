@@ -60,4 +60,11 @@ class Product extends Model
     {
         return $this->morphOne(Media::class, 'mediaable')->where('is_featured', 1);
     }
+
+    public function bundles()
+    {
+        return $this->belongsToMany(Bundle::class, 'bundle_products')
+            ->withPivot('quantity', 'price', 'sort_order')
+            ->withTimestamps();
+    }
 }

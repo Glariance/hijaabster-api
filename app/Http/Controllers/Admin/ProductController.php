@@ -23,7 +23,7 @@ class ProductController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            $data = Product::with(['brand', 'category', 'mediaFeatured'])
+            $data = Product::with(['brand', 'category', 'coupon', 'mediaFeatured'])
                 ->when(request('category_id'), function ($query, $categoryId) {
                     $query->where('category_id', $categoryId);
                 })
@@ -64,6 +64,9 @@ class ProductController extends Controller
                 })
                 ->editColumn('category_id', function ($row) {
                     return $row->category->name ?? "N/A";
+                })
+                ->addColumn('coupon_id', function ($row) {
+                    return $row->coupon->name ?? "N/A";
                 })
                 ->rawColumns(['image', 'action', 'status', 'featured']) // Allow HTML in these columns
                 ->make(true);
@@ -266,6 +269,7 @@ class ProductController extends Controller
             'has_discount' => 'nullable|in:0,1',
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
+            'coupon_id' => 'nullable|exists:coupons,id',
             'featured' => 'nullable|in:0,1',
             'new' => 'nullable|in:0,1',
             'top' => 'nullable|in:0,1',
@@ -289,6 +293,10 @@ class ProductController extends Controller
             $brandId = $request->input('brand_id');
             $brandId = ($brandId === '' || $brandId === null || $brandId === '0') ? null : (int)$brandId;
             
+            // Prepare coupon_id - convert empty string to null
+            $couponId = $request->input('coupon_id');
+            $couponId = ($couponId === '' || $couponId === null || $couponId === '0') ? null : (int)$couponId;
+            
             $product->update([
                 'name' => $validated['name'],
                 'slug' => $validated['slug'],
@@ -300,7 +308,7 @@ class ProductController extends Controller
                 'has_discount' => $request->has('has_discount') ? 1 : 0,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? 0,
-                'coupon_id' => !empty($validated['coupon_id']) ? $validated['coupon_id'] : null,
+                'coupon_id' => $couponId,
                 'featured' => $request->has('featured') ? 1 : 0,
                 'new' => $request->has('new') ? 1 : 0,
                 'top' => $request->has('top') ? 1 : 0,

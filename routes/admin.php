@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CMSController;
 use App\Http\Controllers\Admin\ContactInquiryController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\BundleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LoginController;
@@ -107,6 +108,7 @@ Route::middleware(['auth', 'role:'.config('constants.ADMIN')])->group(function (
     });
 
     Route::resource('coupon', CouponController::class);
+    Route::resource('bundle', BundleController::class);
 
 
 

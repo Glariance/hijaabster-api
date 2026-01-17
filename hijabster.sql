@@ -49,6 +49,40 @@ CREATE TABLE `brands` (
   UNIQUE KEY `brands_slug_unique` (`slug`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `bundle_products` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `bundle_id` bigint(20) unsigned NOT NULL,
+  `product_id` bigint(20) unsigned NOT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
+  `price` decimal(10,2) DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `bundle_products_bundle_id_product_id_unique` (`bundle_id`,`product_id`),
+  KEY `bundle_products_product_id_foreign` (`product_id`),
+  CONSTRAINT `bundle_products_bundle_id_foreign` FOREIGN KEY (`bundle_id`) REFERENCES `bundles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `bundle_products_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `bundles` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `discount_type` enum('percentage','fixed') NOT NULL DEFAULT 'percentage',
+  `discount_value` decimal(10,2) NOT NULL,
+  `total_price` decimal(10,2) DEFAULT NULL,
+  `bundle_price` decimal(10,2) DEFAULT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `bundles_slug_unique` (`slug`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `cache` (
   `key` varchar(255) NOT NULL,
   `value` mediumtext NOT NULL,
@@ -91,7 +125,7 @@ CREATE TABLE `cms_page_section_fields` (
   PRIMARY KEY (`id`),
   KEY `cms_page_section_fields_cms_page_section_id_foreign` (`cms_page_section_id`),
   CONSTRAINT `cms_page_section_fields_cms_page_section_id_foreign` FOREIGN KEY (`cms_page_section_id`) REFERENCES `cms_page_sections` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=348 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=350 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `cms_page_sections` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -104,7 +138,7 @@ CREATE TABLE `cms_page_sections` (
   PRIMARY KEY (`id`),
   KEY `cms_page_sections_cms_page_id_foreign` (`cms_page_id`),
   CONSTRAINT `cms_page_sections_cms_page_id_foreign` FOREIGN KEY (`cms_page_id`) REFERENCES `cms_pages` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `cms_pages` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -173,7 +207,7 @@ CREATE TABLE `coupons` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `coupons_code_unique` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `failed_jobs` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -243,7 +277,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `newsletters` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -410,6 +444,24 @@ INSERT INTO `brands` (`id`, `name`, `slug`, `description`, `status`, `created_at
 (2, 'B', 'b', '<p>This is testing Brand B.</p>', 1, '2026-01-08 16:42:03', '2026-01-08 16:42:49');
 
 
+INSERT INTO `bundle_products` (`id`, `bundle_id`, `product_id`, `quantity`, `price`, `sort_order`, `created_at`, `updated_at`) VALUES
+(1, 1, 2, 3, '55.00', 0, '2026-01-13 23:25:50', '2026-01-13 23:25:50');
+INSERT INTO `bundle_products` (`id`, `bundle_id`, `product_id`, `quantity`, `price`, `sort_order`, `created_at`, `updated_at`) VALUES
+(2, 1, 3, 1, '50.00', 1, '2026-01-13 23:25:50', '2026-01-13 23:25:50');
+INSERT INTO `bundle_products` (`id`, `bundle_id`, `product_id`, `quantity`, `price`, `sort_order`, `created_at`, `updated_at`) VALUES
+(3, 1, 1, 1, '68.00', 2, '2026-01-13 23:25:50', '2026-01-13 23:25:50');
+INSERT INTO `bundle_products` (`id`, `bundle_id`, `product_id`, `quantity`, `price`, `sort_order`, `created_at`, `updated_at`) VALUES
+(4, 2, 1, 1, '68.00', 0, '2026-01-13 23:28:54', '2026-01-13 23:28:54'),
+(5, 2, 3, 1, '50.00', 1, '2026-01-13 23:28:54', '2026-01-13 23:28:54'),
+(6, 3, 3, 7, '50.00', 0, '2026-01-13 23:42:28', '2026-01-13 23:42:28');
+
+INSERT INTO `bundles` (`id`, `name`, `slug`, `description`, `discount_type`, `discount_value`, `total_price`, `bundle_price`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(1, 'Winter Bundle', 'winter-bundle', '<p>Lorem ipsum&nbsp;Curated for sun-filled days and sunset dinners, complete with care instructions and travel pouch.</p>', 'percentage', '15.00', '283.00', '240.55', 1, 1, '2026-01-13 23:25:50', '2026-01-13 23:25:50', NULL);
+INSERT INTO `bundles` (`id`, `name`, `slug`, `description`, `discount_type`, `discount_value`, `total_price`, `bundle_price`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(2, 'Summer Bundle', 'summer-bundle', '<p>Pack-and-go textures designed for effortless layering from airport lounges to gallery strolls</p>\r\n\r\n<ul>\r\n</ul>', 'fixed', '100.00', '118.00', '18.00', 1, 1, '2026-01-13 23:28:54', '2026-01-13 23:28:54', NULL);
+INSERT INTO `bundles` (`id`, `name`, `slug`, `description`, `discount_type`, `discount_value`, `total_price`, `bundle_price`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(3, 'Bless Friday', 'bless-friday', '<p>Share the collection with your circle&mdash;each scarf arrives boxed and ready to delight</p>\r\n\r\n<ul>\r\n</ul>', 'percentage', '24.98', '350.00', '262.57', 1, 1, '2026-01-13 23:42:28', '2026-01-13 23:42:28', NULL);
+
 
 
 
@@ -472,9 +524,9 @@ INSERT INTO `cms_page_section_fields` (`id`, `cms_page_section_id`, `field_group
 (46, 5, NULL, 'Heading', 'text', 'Limited Time Offer!', '2026-01-01 22:39:28', '2026-01-01 22:41:35'),
 (47, 5, NULL, 'Description', 'textarea', '<p>Get&nbsp;20%&nbsp;off all new arrivals. Discover luxurious textures crafted for effortless elegance.</p>', '2026-01-01 22:39:28', '2026-01-01 22:41:35'),
 (48, 5, NULL, 'Image', 'image', 'cms_fields/1767308286_6956fbfe13bb9.jpeg', '2026-01-01 22:44:31', '2026-01-01 22:58:06'),
-(49, 6, 'Group_1', 'Name', 'text', 'Sarah L.', '2026-01-01 23:13:46', '2026-01-01 23:15:08'),
-(50, 6, 'Group_1', 'Designation', 'text', 'Fashion Enthusiast', '2026-01-01 23:13:46', '2026-01-01 23:15:08'),
-(51, 6, 'Group_1', 'Description', 'textarea', '<p>Absolutely love the scarves from Scarf e-commerce app! The quality is superb, and the designs are so elegant and unique. I always get compliments when I wear them.</p>', '2026-01-01 23:13:46', '2026-01-01 23:15:08'),
+(49, 6, 'Group_1', 'Name', 'text', 'Sarah L.', '2026-01-01 23:13:46', '2026-01-12 20:53:08'),
+(50, 6, 'Group_1', 'Designation', 'text', 'Fashion Enthusiast', '2026-01-01 23:13:46', '2026-01-12 20:53:08'),
+(51, 6, 'Group_1', 'Description', 'textarea', '<p>Absolutely love the scarves from Scarf e-commerce app! The quality is superb, and the designs are so elegant and unique. I always get compliments when I wear them.</p>', '2026-01-01 23:13:46', '2026-01-12 20:53:08'),
 (52, 6, 'Group_1', 'Image', 'image', 'cms_fields/1767309304_6956fff8caf57.png', '2026-01-01 23:13:46', '2026-01-01 23:15:08'),
 (53, 6, 'Group_2', 'Name', 'text', 'Jessica R.', '2026-01-01 23:15:47', '2026-01-01 23:17:20'),
 (54, 6, 'Group_2', 'Designation', 'text', 'Style Blogger', '2026-01-01 23:15:47', '2026-01-01 23:17:20'),
@@ -496,14 +548,14 @@ INSERT INTO `cms_page_section_fields` (`id`, `cms_page_section_id`, `field_group
 (70, 6, 'Group_6', 'Designation', 'text', 'Frequent Traveler', '2026-01-01 23:15:52', '2026-01-01 23:23:42'),
 (71, 6, 'Group_6', 'Description', 'textarea', '<p>Lightweight, cozy, and stylish - these scarves are my travel must-have. They fold easily and dress up any airport outfit.</p>', '2026-01-01 23:15:52', '2026-01-01 23:23:42'),
 (72, 6, 'Group_6', 'Image', 'image', 'cms_fields/1767309820_695701fc6332b.jpeg', '2026-01-01 23:15:52', '2026-01-01 23:23:42'),
-(73, 7, NULL, 'Title', 'text', 'Our Story', '2026-01-01 23:27:38', '2026-01-01 23:28:03'),
-(74, 7, NULL, 'Description', 'textarea', '<p>At Scarf e-commerce app, we believe in the power of a beautiful scarf to transform an outfit and express individuality. Our journey began with a passion for exquisite fabrics and unique designs, aiming to bring elegance and style to every woman&#39;s wardrobe.</p>\r\n\r\n<p>We meticulously curate our collections, focusing on quality, comfort, and timeless appeal. Each scarf is a testament to our commitment to craftsmanship and our dedication to helping you find the perfect accessory for every occasion.</p>', '2026-01-01 23:27:38', '2026-01-01 23:28:03'),
+(73, 7, NULL, 'Title', 'text', 'Our Story', '2026-01-01 23:27:38', '2026-01-12 21:09:40'),
+(74, 7, NULL, 'Description', 'textarea', '<p>At Scarf e-commerce app, we believe in the power of a beautiful scarf to transform an outfit and express individuality. Our journey began with a passion for exquisite fabrics and unique designs, aiming to bring elegance and style to every woman&#39;s wardrobe.</p>\r\n\r\n<p>We meticulously curate our collections, focusing on quality, comfort, and timeless appeal. Each scarf is a testament to our commitment to craftsmanship and our dedication to helping you find the perfect accessory for every occasion.</p>', '2026-01-01 23:27:38', '2026-01-12 21:09:40'),
 (75, 7, NULL, 'Image', 'image', 'cms_fields/1767310082_69570302cdfc3.jpeg', '2026-01-01 23:27:38', '2026-01-01 23:28:03'),
-(76, 8, NULL, 'Title', 'text', 'Our Mission', '2026-01-01 23:30:05', '2026-01-01 23:30:24'),
-(77, 8, NULL, 'Description', 'textarea', '<p>Our mission is to empower women to express their unique style and confidence through our exquisite collection of scarves. We are dedicated to providing high-quality, ethically sourced, and beautifully designed scarves that inspire elegance and individuality.</p>\r\n\r\n<p>We strive to create a positive impact by supporting sustainable practices and fostering a community where fashion meets purpose.</p>', '2026-01-01 23:30:05', '2026-01-01 23:30:24'),
+(76, 8, NULL, 'Title', 'text', 'Our Mission', '2026-01-01 23:30:05', '2026-01-12 21:09:30'),
+(77, 8, NULL, 'Description', 'textarea', '<p>Our mission is to empower women to express their unique style and confidence through our exquisite collection of scarves. We are dedicated to providing high-quality, ethically sourced, and beautifully designed scarves that inspire elegance and individuality.</p>\r\n\r\n<p>We strive to create a positive impact by supporting sustainable practices and fostering a community where fashion meets purpose.</p>', '2026-01-01 23:30:05', '2026-01-12 21:09:30'),
 (78, 8, NULL, 'Image', 'image', 'cms_fields/1767310224_6957039015377.jpeg', '2026-01-01 23:30:05', '2026-01-01 23:30:24'),
-(79, 9, NULL, 'Title', 'text', 'Our Vision', '2026-01-01 23:33:09', '2026-01-01 23:33:37'),
-(80, 9, NULL, 'Description', 'textarea', '<p>We envision a world where every woman feels empowered and beautiful, with a scarf that reflects her personality and enhances her natural grace. We strive to be the leading destination for premium girls&#39; scarves, known for our exceptional designs, quality, and customer experience.</p>\r\n\r\n<p>Our vision extends to building a global community that celebrates diversity, creativity, and the art of scarf styling.</p>', '2026-01-01 23:33:09', '2026-01-01 23:33:37'),
+(79, 9, NULL, 'Title', 'text', 'Our Vision', '2026-01-01 23:33:09', '2026-01-12 21:09:22'),
+(80, 9, NULL, 'Description', 'textarea', '<p>We envision a world where every woman feels empowered and beautiful, with a scarf that reflects her personality and enhances her natural grace. We strive to be the leading destination for premium girls&#39; scarves, known for our exceptional designs, quality, and customer experience.</p>\r\n\r\n<p>Our vision extends to building a global community that celebrates diversity, creativity, and the art of scarf styling.</p>', '2026-01-01 23:33:09', '2026-01-12 21:09:22'),
 (81, 9, NULL, 'Image', 'image', 'cms_fields/1767310416_69570450d4ad9.jpeg', '2026-01-01 23:33:09', '2026-01-01 23:33:37'),
 (82, 10, NULL, 'Title', 'text', 'Wrapped in meaning', '2026-01-02 01:05:40', '2026-01-02 01:08:34'),
 (83, 10, NULL, 'Heading', 'text', 'About Us', '2026-01-02 01:05:40', '2026-01-02 01:08:34'),
@@ -594,8 +646,7 @@ INSERT INTO `cms_page_section_fields` (`id`, `cms_page_section_id`, `field_group
 (168, 23, NULL, 'Box 3 Description', 'textarea', '<p>Preview the fall palette live, reserve statement pieces before they ship, and collect loyalty double-points during the event.</p>', '2026-01-05 16:56:28', '2026-01-05 16:57:19'),
 (169, 24, NULL, 'Title', 'text', 'Redeeming Your Promotion', '2026-01-05 16:58:48', '2026-01-05 16:59:07'),
 (170, 24, NULL, 'Description', 'textarea', '<p>Every offer is designed to feel intuitive. Follow these quick steps to secure your incentive and enjoy concierge-level support along the way.</p>', '2026-01-05 16:58:48', '2026-01-05 16:59:07'),
-(171, 25, 'Group_1', 'Heading', 'text', 'Select your pieces', '2026-01-05 17:21:12', '2026-01-05 17:22:32');
-INSERT INTO `cms_page_section_fields` (`id`, `cms_page_section_id`, `field_group`, `field_name`, `field_type`, `field_value`, `created_at`, `updated_at`) VALUES
+(171, 25, 'Group_1', 'Heading', 'text', 'Select your pieces', '2026-01-05 17:21:12', '2026-01-05 17:22:32'),
 (172, 25, 'Group_1', 'Description', 'textarea', '<p>Explore curated edits or filter by material to find the silhouettes that suit your season.</p>', '2026-01-05 17:21:12', '2026-01-05 17:22:32'),
 (173, 25, 'Group_2', 'Heading', 'text', 'Apply the incentive', '2026-01-05 17:21:51', '2026-01-05 17:22:32'),
 (174, 25, 'Group_2', 'Description', 'textarea', '<p>Add the promotion code at checkout or rely on eligible perks that apply automatically.</p>', '2026-01-05 17:21:51', '2026-01-05 17:22:32'),
@@ -603,14 +654,14 @@ INSERT INTO `cms_page_section_fields` (`id`, `cms_page_section_id`, `field_group
 (176, 25, 'Group_3', 'Description', 'textarea', '<p>Receive tracking, care tips, and priority stylist support with every promotional order.</p>', '2026-01-05 17:21:51', '2026-01-05 17:22:33'),
 (177, 26, NULL, 'Title', 'text', 'Promotion FAQs', '2026-01-05 17:29:31', '2026-01-05 17:29:40'),
 (178, 26, NULL, 'Description', 'textarea', '<p>Need quick clarity? We compiled the essentials so you can shop your offers with confidence.</p>', '2026-01-05 17:29:31', '2026-01-05 17:29:40'),
-(179, 27, 'Group_1', 'Question', 'textarea', '<h3>Can I combine multiple promotion codes on one order?</h3>', '2026-01-05 17:31:06', '2026-01-05 17:31:51'),
-(180, 27, 'Group_1', 'Answer', 'textarea', '<p>Most promotions are single-use per checkout. Loyalty perks like free express shipping will still apply automatically where eligible.</p>', '2026-01-05 17:31:06', '2026-01-05 17:31:51'),
+(179, 27, 'Group_1', 'Question', 'textarea', '<h3>Can I combine multiple promotion codes on one order?</h3>', '2026-01-05 17:31:06', '2026-01-16 21:22:44'),
+(180, 27, 'Group_1', 'Answer', 'textarea', '<p>Most promotions are single-use per checkout. Loyalty perks like free express shipping will still apply automatically where eligible.</p>', '2026-01-05 17:31:06', '2026-01-16 21:22:44'),
 (181, 27, 'Group_2', 'Question', 'textarea', '<h3>How do I know when a promotion expires?</h3>', '2026-01-05 17:31:22', '2026-01-05 17:31:51'),
 (182, 27, 'Group_2', 'Answer', 'textarea', '<p>Each offer lists its end date in the details above. We also send reminder emails 48 hours before a promotion closes.</p>', '2026-01-05 17:31:22', '2026-01-05 17:31:51'),
 (183, 27, 'Group_3', 'Question', 'textarea', '<h3>Do promotional purchases qualify for returns or exchanges?</h3>', '2026-01-05 17:31:24', '2026-01-05 17:31:51'),
 (184, 27, 'Group_3', 'Answer', 'textarea', '<p>Absolutely. All scarves purchased with promotions follow our standard 30-day return and exchange policy as long as tags remain attached.</p>', '2026-01-05 17:31:24', '2026-01-05 17:31:51'),
-(185, 28, NULL, 'Title', 'text', 'Ready for Your Next Signature Layer?', '2026-01-05 17:32:49', '2026-01-05 17:33:11'),
-(186, 28, NULL, 'Description', 'textarea', '<p>Build your scarf wardrobe with thoughtful perks, seasonal previews, and guidance from our stylists. Your next wrap is already waiting.</p>', '2026-01-05 17:32:49', '2026-01-05 17:33:11'),
+(185, 28, NULL, 'Title', 'text', 'Ready for Your Next Signature Layer?', '2026-01-05 17:32:49', '2026-01-16 21:22:36'),
+(186, 28, NULL, 'Description', 'textarea', '<p>Build your scarf wardrobe with thoughtful perks, seasonal previews, and guidance from our stylists. Your next wrap is already waiting.</p>', '2026-01-05 17:32:49', '2026-01-16 21:22:36'),
 (187, 28, NULL, 'Button Text', 'text', 'Explore promotions in store', '2026-01-05 17:32:49', '2026-01-05 17:33:11'),
 (188, 29, NULL, 'Title', 'text', 'Shop by Category', '2026-01-05 17:43:47', '2026-01-05 17:44:41'),
 (189, 29, NULL, 'Heading', 'text', 'Curate Your Signature Edit', '2026-01-05 17:43:47', '2026-01-05 17:44:41'),
@@ -769,7 +820,9 @@ INSERT INTO `cms_page_section_fields` (`id`, `cms_page_section_id`, `field_group
 (344, 59, NULL, 'Title', 'text', 'Need a stylist?', '2026-01-09 19:03:38', '2026-01-09 19:03:52'),
 (345, 59, NULL, 'Description', 'textarea', '<p>Our concierge team can recommend complementary pieces, confirm sizing, or schedule a gift delivery on your behalf. Leave a note above or reach out directly.</p>', '2026-01-09 19:03:38', '2026-01-09 19:03:52'),
 (346, 59, NULL, 'Button 1', 'text', 'Message concierge', '2026-01-09 19:03:38', '2026-01-09 19:03:52'),
-(347, 59, NULL, 'Button 2', 'text', 'Call +1 (212) 555-1045', '2026-01-09 19:03:38', '2026-01-09 19:03:52');
+(347, 59, NULL, 'Button 2', 'text', 'Call +1 (212) 555-1045', '2026-01-09 19:03:38', '2026-01-09 19:03:52'),
+(348, 60, NULL, 'Title', 'text', 'What Our Customers Say', '2026-01-12 19:19:28', '2026-01-12 19:19:41'),
+(349, 60, NULL, 'Description', 'textarea', '<p>Hear from our happy customers about their experience with our beautiful scarves.</p>', '2026-01-12 19:19:28', '2026-01-12 19:19:41');
 
 INSERT INTO `cms_page_sections` (`id`, `cms_page_id`, `section_name`, `section_type`, `section_sort_order`, `created_at`, `updated_at`) VALUES
 (1, 1, 'Home Banner | 1st Section', 'repeater', 1, '2025-12-23 18:41:12', '2026-01-01 21:51:50');
@@ -831,7 +884,8 @@ INSERT INTO `cms_page_sections` (`id`, `cms_page_id`, `section_name`, `section_t
 (56, 10, 'Banner | 1st Section', 'single', 1, '2026-01-09 18:38:00', '2026-01-09 18:38:00'),
 (57, 10, 'Also Like | 2nd Section', 'single', 2, '2026-01-09 18:44:10', '2026-01-09 18:44:10'),
 (58, 11, 'Banner 1st Section', 'single', 1, '2026-01-09 19:02:01', '2026-01-09 19:02:01'),
-(59, 11, 'Need a stylist | 2nd Section', 'single', 2, '2026-01-09 19:03:15', '2026-01-09 19:03:15');
+(59, 11, 'Need a stylist | 2nd Section', 'single', 2, '2026-01-09 19:03:15', '2026-01-09 19:03:15'),
+(60, 1, 'Testimonial Content | 8th Section', 'single', 10, '2026-01-12 19:18:59', '2026-01-12 19:18:59');
 
 INSERT INTO `cms_pages` (`id`, `page_title`, `page_slug`, `page_meta_title`, `page_meta_keyword`, `page_meta_description`, `created_at`, `updated_at`) VALUES
 (1, 'Home', 'home', 'Home | Hijaabster', 'hijaab,scarf,abaya', 'Hijaabster home page.', '2025-12-23 17:50:05', '2025-12-23 17:50:05');
@@ -855,6 +909,8 @@ INSERT INTO `cms_pages` (`id`, `page_title`, `page_slug`, `page_meta_title`, `pa
 
 INSERT INTO `coupons` (`id`, `code`, `name`, `description`, `discount_type`, `discount_value`, `minimum_purchase`, `maximum_discount`, `usage_limit`, `used_count`, `valid_from`, `valid_until`, `status`, `created_at`, `updated_at`) VALUES
 (1, 'Lorem', 'ipsum', 'lorem ipsum', 'percentage', '10.00', '5.00', '5000.00', 5, 0, '2026-01-01 18:19:00', '2026-01-22 18:22:00', 1, '2026-01-09 00:18:43', '2026-01-09 00:19:15');
+INSERT INTO `coupons` (`id`, `code`, `name`, `description`, `discount_type`, `discount_value`, `minimum_purchase`, `maximum_discount`, `usage_limit`, `used_count`, `valid_from`, `valid_until`, `status`, `created_at`, `updated_at`) VALUES
+(2, 'SOLSTICE20', 'Winter25', 'Lorem ipsum', 'percentage', '30.00', '1.00', NULL, 1, 0, '2026-01-14 05:02:00', '2026-01-31 05:02:00', 1, '2026-01-14 00:02:46', '2026-01-14 00:02:46');
 
 
 
@@ -896,8 +952,8 @@ INSERT INTO `media` (`id`, `path`, `media_type`, `mediaable_type`, `mediaable_id
 (20, '/storage/products/UmhrAZH07L84EuqIW4REMKdqm9bzb9mAHyfveIAG.jpg', 'image', 'App\\Models\\Product', 1, 0, NULL, '2026-01-08 18:23:57', '2026-01-08 19:25:41'),
 (23, '/storage/products/UufuWzU7QDmI4BfkLDvOUfuIqg2RJMLQhQAFeZSN.jpg', 'image', 'App\\Models\\Product', 2, 1, NULL, '2026-01-08 22:04:41', '2026-01-08 22:04:41'),
 (24, '/storage/products/8hhboHgsgPS39NZ0Rurl3ZHTKPqVuQGgR6jzV21Q.jpg', 'image', 'App\\Models\\Product', 2, 0, NULL, '2026-01-08 22:04:41', '2026-01-08 22:04:41'),
-(25, '/storage/products/H8VkrJPW9e4zjgeh2MfvOjcqXX3SzfcG3tr24DaP.jpg', 'image', 'App\\Models\\Product', 3, 1, NULL, '2026-01-08 22:13:13', '2026-01-08 22:13:53'),
-(26, '/storage/products/Vh2WqFaRvdqWXfDHJlFbBDFkWZQ1dB5kzrUQSzL2.jpg', 'image', 'App\\Models\\Product', 3, 0, NULL, '2026-01-08 22:13:13', '2026-01-08 22:13:53');
+(25, '/storage/products/H8VkrJPW9e4zjgeh2MfvOjcqXX3SzfcG3tr24DaP.jpg', 'image', 'App\\Models\\Product', 3, 1, NULL, '2026-01-08 22:13:13', '2026-01-14 00:09:31'),
+(26, '/storage/products/Vh2WqFaRvdqWXfDHJlFbBDFkWZQ1dB5kzrUQSzL2.jpg', 'image', 'App\\Models\\Product', 3, 0, NULL, '2026-01-08 22:13:13', '2026-01-14 00:09:31');
 
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (1, '0001_01_01_000000_create_users_table', 1);
@@ -932,7 +988,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (27, '2025_12_22_212600_add_company_and_service_to_contact_inquiries_table', 2),
 (28, '2026_01_08_183118_make_brand_id_nullable_in_products_table', 3),
 (29, '2026_01_08_221835_create_coupons_table', 4),
-(30, '2026_01_08_222115_add_coupon_id_to_products_table', 4);
+(30, '2026_01_08_222115_add_coupon_id_to_products_table', 4),
+(31, '2026_01_13_221745_create_bundles_table', 5),
+(32, '2026_01_13_221749_create_bundle_products_table', 5);
 
 
 
@@ -945,11 +1003,11 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 
 
 INSERT INTO `products` (`id`, `name`, `slug`, `description`, `base_price`, `stock`, `has_variations`, `category_id`, `brand_id`, `coupon_id`, `has_discount`, `discount_type`, `discount_value`, `created_by`, `featured`, `new`, `top`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'Silk Radiance Hijab', 'silk-radiance-hijab', '<p>Fluid satin-finish silk with hand-rolled hems for evening elegance.</p>', '68.00', 20, 0, 4, NULL, NULL, 1, 'percentage', '5.00', 1, 0, 0, 0, 1, '2026-01-08 18:23:57', '2026-01-08 19:25:41');
+(1, 'Silk Radiance Hijab', 'silk-radiance-hijab', '<p>Fluid satin-finish silk with hand-rolled hems for evening elegance.</p>', '68.00', 20, 0, 4, NULL, NULL, 1, 'percentage', '5.00', 1, 1, 1, 0, 1, '2026-01-08 18:23:57', '2026-01-08 19:25:41');
 INSERT INTO `products` (`id`, `name`, `slug`, `description`, `base_price`, `stock`, `has_variations`, `category_id`, `brand_id`, `coupon_id`, `has_discount`, `discount_type`, `discount_value`, `created_by`, `featured`, `new`, `top`, `status`, `created_at`, `updated_at`) VALUES
-(2, 'Cloud Cotton Veil', 'cloud-cotton-veil', '<p>Featherweight cotton blend with a whisper-soft hand feel.</p>', '42.00', 0, 0, 4, NULL, NULL, 0, 'percentage', '0.00', 1, 0, 0, 0, 1, '2026-01-08 22:04:41', '2026-01-08 22:04:41');
+(2, 'Cloud Cotton Veil', 'cloud-cotton-veil', '<p>Featherweight cotton blend with a whisper-soft hand feel.</p>', '42.00', 0, 0, 4, NULL, NULL, 0, 'percentage', '0.00', 1, 1, 0, 0, 1, '2026-01-08 22:04:41', '2026-01-08 22:04:41');
 INSERT INTO `products` (`id`, `name`, `slug`, `description`, `base_price`, `stock`, `has_variations`, `category_id`, `brand_id`, `coupon_id`, `has_discount`, `discount_type`, `discount_value`, `created_by`, `featured`, `new`, `top`, `status`, `created_at`, `updated_at`) VALUES
-(3, 'Nordic Wool Wrap', 'nordic-wool-wrap', '<p>Plush merino weave designed to lock in warmth without bulk.</p>', '50.00', 0, 0, 2, NULL, NULL, 0, 'percentage', '0.00', 1, 0, 0, 0, 1, '2026-01-08 22:13:13', '2026-01-08 22:13:53');
+(3, 'Nordic Wool Wrap', 'nordic-wool-wrap', '<p>Plush merino weave designed to lock in warmth without bulk.</p>', '50.00', 0, 0, 2, NULL, 2, 0, 'percentage', '0.00', 1, 0, 0, 0, 1, '2026-01-08 22:13:13', '2026-01-14 00:09:31');
 
 INSERT INTO `roles` (`id`, `name`, `created_at`, `updated_at`) VALUES
 (1, 'user', '2025-12-22 20:52:42', '2025-12-22 20:52:42');

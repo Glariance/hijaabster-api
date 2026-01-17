@@ -118,22 +118,49 @@ class HomeController extends Controller
             return null;
         }
 
+        // If already a full URL, return as is
         if (preg_match('/^https?:\\/\\//', $path)) {
             return $path;
         }
 
+        // Remove leading slash and 'storage/' if already present
+        $cleanPath = ltrim($path, '/');
+        if (strpos($cleanPath, 'storage/') === 0) {
+            $cleanPath = substr($cleanPath, 8); // Remove 'storage/' prefix
+        }
+
         // Check if file exists in public/storage (created by storage:link)
-        $publicPath = public_path('storage/' . ltrim($path, '/'));
+        $publicPath = public_path('storage/' . $cleanPath);
         if (file_exists($publicPath) && is_file($publicPath)) {
-            // Use direct URL to /storage/ path (Laravel's storage symlink)
-            return url('storage/' . ltrim($path, '/'));
+            // Use url() helper to generate full absolute URL
+            $fullUrl = url('storage/' . $cleanPath);
+            // Ensure it's an absolute URL (not relative)
+            if (!preg_match('/^https?:\\/\\//', $fullUrl)) {
+                // If url() returns relative, prepend APP_URL
+                $appUrl = config('app.url', 'http://localhost:8000');
+                $fullUrl = rtrim($appUrl, '/') . '/' . ltrim($fullUrl, '/');
+            }
+            return $fullUrl;
         }
 
         // Fallback: check in storage/app/public
-        if (Storage::disk('public')->exists($path)) {
-            return url('storage/' . ltrim($path, '/'));
+        if (Storage::disk('public')->exists($cleanPath)) {
+            $fullUrl = url('storage/' . $cleanPath);
+            // Ensure it's an absolute URL (not relative)
+            if (!preg_match('/^https?:\\/\\//', $fullUrl)) {
+                // If url() returns relative, prepend APP_URL
+                $appUrl = config('app.url', 'http://localhost:8000');
+                $fullUrl = rtrim($appUrl, '/') . '/' . ltrim($fullUrl, '/');
+            }
+            return $fullUrl;
         }
 
-        return $path;
+        // Last resort: try to construct URL anyway
+        $fullUrl = url('storage/' . $cleanPath);
+        if (!preg_match('/^https?:\\/\\//', $fullUrl)) {
+            $appUrl = config('app.url', 'http://localhost:8000');
+            $fullUrl = rtrim($appUrl, '/') . '/' . ltrim($fullUrl, '/');
+        }
+        return $fullUrl;
     }
 }

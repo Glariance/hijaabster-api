@@ -54,6 +54,8 @@
                             class="bx bx-right-arrow-alt"></i>Products</a></li>
                 <li> <a href="{{ route('admin.coupon.index') }}"><i
                             class="bx bx-right-arrow-alt"></i>Coupons</a></li>
+                <li> <a href="{{ route('admin.bundle.index') }}"><i
+                            class="bx bx-right-arrow-alt"></i>Bundles</a></li>
             </ul>
         </li> 
 

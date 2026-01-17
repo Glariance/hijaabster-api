@@ -3,37 +3,20 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\CategoryResource;
-use App\Models\Category;
 use App\Models\CmsPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
-class CategoryController extends Controller
+class ShopController extends Controller
 {
     /**
-     * Return active categories for the storefront.
-     */
-    public function index(): AnonymousResourceCollection
-    {
-        $categories = Category::query()
-            ->with(['media', 'mediaFeatured'])
-            ->where('status', 1)
-            ->orderBy('name')
-            ->get();
-
-        return CategoryResource::collection($categories);
-    }
-
-    /**
-     * Return the CMS powered content for the category page.
+     * Return the CMS powered content for the shop page.
      */
     public function show(Request $request): JsonResponse
     {
-        $slug = $request->query('slug', 'category');
+        $slug = $request->query('slug', 'shop');
 
         $page = CmsPage::query()
             ->where('page_slug', $slug)

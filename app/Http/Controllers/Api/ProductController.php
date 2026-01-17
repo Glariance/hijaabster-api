@@ -97,7 +97,14 @@ class ProductController extends Controller
     {
         $request->merge(['featured' => true]);
 
-        $products = $this->buildQuery($request)->get();
+        $products = Product::query()
+            ->with(['category', 'mediaFeatured', 'media'])
+            ->where('status', 1)
+            ->where('featured', 1)
+            ->orderByDesc('featured')
+            ->orderBy('name')
+            ->limit((int) $request->input('limit', 6)) // Default to 6 products
+            ->get();
 
         return ProductResource::collection($products);
     }
@@ -108,7 +115,7 @@ class ProductController extends Controller
     protected function buildQuery(Request $request): Builder
     {
         $query = Product::query()
-            ->with(['category', 'mediaFeatured'])
+            ->with(['category', 'mediaFeatured', 'coupon'])
             ->when(! $request->boolean('include_inactive'), function (Builder $builder) {
                 $builder->where('status', 1);
             })
@@ -120,6 +127,9 @@ class ProductController extends Controller
             })
             ->when($request->boolean('top'), function (Builder $builder) {
                 $builder->where('top', 1);
+            })
+            ->when($request->boolean('has_coupon'), function (Builder $builder) {
+                $builder->whereNotNull('coupon_id');
             })
             ->when($request->filled('category'), function (Builder $builder) use ($request) {
                 $category = $request->input('category');
