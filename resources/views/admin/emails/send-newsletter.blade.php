@@ -1,16 +1,12 @@
-@component('mail::message')
 @php
-    $primary = '#BE446C';
-    $primaryDark = '#9A2E4A';
-    $primaryLight = '#E8A4B8';
-    $muted = '#6B7280';
-    $bgLight = '#F9FAFB';
-    $logo = (config('app.url') ? rtrim(config('app.url'), '/') : '') . '/adminassets/images/logo.png';
+$emailLogoUrl = (config('app.url') ? rtrim(config('app.url'), '/') : '') . '/adminassets/images/logo.png';
+$primary = '#b8325d';
+$primaryDark = '#9A2E4A';
+$bgLight = '#f1d8e2';
+$muted = '#6B7280';
 @endphp
-
-<div style="text-align:center; margin-bottom: 32px; padding: 20px 0;">
-    <img src="{{ $logo }}" alt="{{ config('app.name') }} logo" style="max-width: 180px; height: auto;">
-</div>
+@component('mail::message')
+@include('emails.partials.logo-header')
 
 <div style="background: linear-gradient(135deg, {{ $primaryDark }} 0%, {{ $primary }} 100%); padding: 18px 32px; border-radius: 8px; margin-bottom: 20px; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
     <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #ffffff; letter-spacing: 0.3px;">{{ $subject ?? 'Message from ' . config('app.name') }}</h1>
@@ -27,4 +23,5 @@
         <strong style="color: {{ $primary }};">{{ config('app.name') }}</strong>
     </p>
 </div>
+@include('emails.partials.logo-footer')
 @endcomponent

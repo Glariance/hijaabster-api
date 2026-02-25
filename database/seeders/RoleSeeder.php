@@ -103,12 +103,12 @@ class RoleSeeder extends Seeder
             throw new \Exception("Admin role with ID {$adminId} does not exist. Please check the roles table.");
         }
 
-        // Create/update admin user safely with correct role_id
+        // Create/update admin user safely with correct role_id (password: admin123)
         User::updateOrCreate(
             ['email' => 'admin@mail.com'],   // key to find existing
             [
                 'name'     => 'Admin',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('admin123'),
                 'role_id'  => $adminId, // Use constant directly to ensure correct value
             ]
         );

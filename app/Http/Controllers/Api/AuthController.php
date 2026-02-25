@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Mail\ForgotPasswordAdminMail;
+use App\Mail\PasswordChangedUserMail;
 use App\Mail\ResetPasswordMail;
 use App\Mail\UserRegisteredAdminMail;
 use App\Mail\UserRegisteredUserMail;
@@ -12,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 
@@ -26,6 +29,14 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'company' => ['nullable', 'string', 'max:255'],
+        ], [
+            'name.required' => 'Please enter your name.',
+            'email.required' => 'Please enter your email address.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.unique' => 'An account with this email already exists.',
+            'password.required' => 'Please enter a password.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.confirmed' => 'Password and confirmation do not match.',
         ]);
 
         $token = Str::random(60);
@@ -62,6 +73,10 @@ class AuthController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+        ], [
+            'email.required' => 'Please enter your email address.',
+            'email.email' => 'Please enter a valid email address.',
+            'password.required' => 'Please enter your password.',
         ]);
 
         $user = User::where('email', $validated['email'])->first();
@@ -86,6 +101,9 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
+        ], [
+            'email.required' => 'Please enter your email address.',
+            'email.email' => 'Please enter a valid email address.',
         ]);
 
         $user = User::where('email', $validated['email'])->first();
@@ -111,6 +129,10 @@ class AuthController extends Controller
 
         try {
             Mail::to($user->email)->send(new ResetPasswordMail($user, $resetUrl, $token));
+            $adminEmail = config('mail.from.address') ?: env('MAIL_FROM_ADDRESS');
+            if ($adminEmail) {
+                Mail::to($adminEmail)->send(new ForgotPasswordAdminMail($user));
+            }
         } catch (\Throwable $e) {
             return response()->json([
                 'message' => 'Could not send reset email. Please try again later.',
@@ -118,11 +140,9 @@ class AuthController extends Controller
             ], 500);
         }
 
-        // In a real app we would email the token. For this build, return it so the SPA can use it directly.
         return response()->json([
             'success' => true,
-            'message' => 'Password reset token created.',
-            'token' => $token,
+            'message' => 'If an account exists for that email, you will receive a password reset link shortly.',
         ]);
     }
 
@@ -132,6 +152,13 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
             'token' => ['required', 'string'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'email.required' => 'Please enter your email address.',
+            'email.email' => 'Please enter a valid email address.',
+            'token.required' => 'Reset token is missing.',
+            'password.required' => 'Please enter a new password.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.confirmed' => 'Password and confirmation do not match.',
         ]);
 
         $record = DB::table('password_reset_tokens')->where('email', $validated['email'])->first();
@@ -161,6 +188,12 @@ class AuthController extends Controller
 
         DB::table('password_reset_tokens')->where('email', $validated['email'])->delete();
 
+        try {
+            Mail::to($user->email)->send(new PasswordChangedUserMail($user));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Password has been reset. Please log in with your new credentials.',
@@ -173,6 +206,63 @@ class AuthController extends Controller
         if (! $user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
+
+        return response()->json($user);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $this->userFromRequest($request);
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $rules = [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'company' => ['nullable', 'string', 'max:255'],
+            'address_line1' => ['nullable', 'string', 'max:255'],
+            'address_line2' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state' => ['nullable', 'string', 'max:100'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
+        ];
+
+        if ($request->hasFile('image')) {
+            $rules['image'] = ['file', 'mimetypes:image/jpeg,image/pjpeg,image/png,image/gif,image/webp', 'max:2048'];
+        }
+
+        $validated = $request->validate($rules, [
+            'name.required' => 'Please enter your name.',
+            'email.required' => 'Please enter your email address.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.unique' => 'An account with this email already exists.',
+            'image.mimetypes' => 'The file must be an image (JPEG, PNG, GIF or WebP).',
+            'image.max' => 'The image may not be greater than 2MB.',
+        ]);
+
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->phone = $validated['phone'] ?? null;
+        $user->company = $validated['company'] ?? null;
+        $user->address_line1 = $validated['address_line1'] ?? null;
+        $user->address_line2 = $validated['address_line2'] ?? null;
+        $user->city = $validated['city'] ?? null;
+        $user->state = $validated['state'] ?? null;
+        $user->postal_code = $validated['postal_code'] ?? null;
+        $user->country = $validated['country'] ?? null;
+
+        if ($request->hasFile('image')) {
+            if ($user->image) {
+                Storage::disk('public')->delete($user->image);
+            }
+            $path = $request->file('image')->store('avatars', 'public');
+            $user->image = $path;
+        }
+
+        $user->save();
 
         return response()->json($user);
     }

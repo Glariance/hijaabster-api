@@ -58,6 +58,21 @@ return Application::configure(basePath: dirname(__DIR__))
     })
 
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+                $response = response()->json([
+                    'message' => $e->getMessage(),
+                    'exception' => config('app.debug') ? get_class($e) : null,
+                ], $status);
+                return $response->withHeaders([
+                    'Access-Control-Allow-Origin' => $request->header('Origin', '*'),
+                    'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, Accept',
+                    'Access-Control-Allow-Credentials' => 'true',
+                ]);
+            }
+            return null;
+        });
     })
     ->create();

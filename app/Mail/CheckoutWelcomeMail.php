@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Mail;
+
+use App\Models\User;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+
+class CheckoutWelcomeMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public function __construct(
+        public User $user,
+        public string $plainPassword
+    ) {}
+
+    public function build(): self
+    {
+        return $this->subject('Your account is ready – ' . config('app.name'))
+            ->markdown('emails.checkout-welcome', [
+                'user' => $this->user,
+                'plainPassword' => $this->plainPassword,
+            ]);
+    }
+}

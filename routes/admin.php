@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\OrderController;
 
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [LoginController::class, 'login'])->name('login');
@@ -90,6 +91,7 @@ Route::middleware(['auth', 'role:'.config('constants.ADMIN')])->group(function (
     Route::resource('newsletter-management', NewsLetterController::class);
 
     Route::resource('contact-inquiry', ContactInquiryController::class);
+    Route::resource('orders', OrderController::class)->only(['index', 'show']);
     Route::resource('users', UserController::class)->only(['index', 'show', 'destroy']);
 
     Route::resource('tags', TagController::class);

@@ -102,6 +102,13 @@
                       <div class="menu-title">Users</div>
                   </a>
                 </li>
+                <li>
+                  <a href="{{ route('admin.orders.index') }}">
+                      <div class="parent-icon"><i class='bx bx-package'></i>
+                      </div>
+                      <div class="menu-title">Orders</div>
+                  </a>
+                </li>
                  <li>
                     <a href="{{ route('admin.newsletter-management.index') }}">
                         <div class="parent-icon"><i class='bx bx-cookie'></i>

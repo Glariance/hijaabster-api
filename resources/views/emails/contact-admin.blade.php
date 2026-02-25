@@ -1,15 +1,12 @@
-@component('mail::message')
 @php
-    $primary = '#BE446C';
-    $primaryLight = '#E8A4B8';
-    $primaryDark = '#9A2E4A';
-    $muted = '#6B7280';
-    $bgLight = '#FDF2F8';
+$emailLogoUrl = (config('app.url') ? rtrim(config('app.url'), '/') : '') . '/adminassets/images/logo.png';
+$primary = '#b8325d';
+$primaryDark = '#9A2E4A';
+$bgLight = '#f1d8e2';
+$muted = '#6B7280';
 @endphp
-
-<div style="text-align:center; margin-bottom: 24px; padding: 20px 0;">
-    <img src="{{ (config('app.url') ? rtrim(config('app.url'), '/') : '') . '/adminassets/images/logo.png' }}" alt="{{ config('app.name') }} logo" style="max-width: 180px; height: auto;">
-</div>
+@component('mail::message')
+@include('emails.partials.logo-header')
 
 <div style="background: linear-gradient(135deg, {{ $primaryDark }} 0%, {{ $primary }} 100%); padding: 32px; border-radius: 16px; margin-bottom: 32px; color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
     <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">New Website Inquiry</h1>
@@ -65,4 +62,5 @@
 <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
     <p style="margin: 0; color: {{ $muted }}; font-size: 14px;">Thanks,<br><strong style="color: {{ $primary }};">{{ config('app.name') }} Team</strong></p>
 </div>
+@include('emails.partials.logo-footer')
 @endcomponent

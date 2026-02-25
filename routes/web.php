@@ -1,6 +1,12 @@
 
 <?php
+
+use App\Http\Controllers\Api\AccessibilityController;
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\PrivacyController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Storage;
@@ -39,7 +45,7 @@ Route::get('/media/{path}', function (string $path) {
     ]);
 })->where('path', '.*')->name('media.asset');
 
-Route::get('/', function (Request $request, ProductController $controller) {
+Route::get('/', function (Request $request, CheckoutController $controller) {
     $response = $controller->show($request);
 
     dd($response->getData(true));

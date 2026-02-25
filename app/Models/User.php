@@ -23,8 +23,18 @@ class User extends Authenticatable
         'role_id',
         'email',
         'password',
+        'image',
+        'phone',
         'company',
+        'address_line1',
+        'address_line2',
+        'city',
+        'state',
+        'postal_code',
+        'country',
     ];
+
+    protected $appends = ['avatar_url'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -48,6 +58,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (empty($this->image)) {
+            return null;
+        }
+        if (str_starts_with($this->image, 'http')) {
+            return $this->image;
+        }
+        return url(\Illuminate\Support\Facades\Storage::disk('public')->url($this->image));
     }
     public function isAdmin() {
         return $this->role_id == config('constants.ADMIN');
